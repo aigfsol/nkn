@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anime Terminal Chatbot</title>
+    <style>
+        /* General Styles */
+        body {
+            background-color: #2e0135; /* Deep purple background */
+            color: #ff66cc;           /* Pink text */
+            font-family: monospace;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        /* Character Container */
+        #character-container {
+            position: absolute;
+            top: 33px;
+            transition: transform 0.5s ease-out;
+        }
+
+        #character {
+            width: 150px; 
+            height: auto;
+            animation: float 2.5s ease-in-out infinite alternate;
+        }
+
+        @keyframes float {
+            from {
+                transform: translateY(0);
+            }
+            to {
+                transform: translateY(-10px);
+            }
+        }
+
+        /* Terminal Styles */
+        #terminal {
+            background-color: #220022;
+            border: 3px solid #ff66cc;
+            padding: 10px;
+            border-radius: 10px;
+            width: 70%;  /* Set terminal width */
+            max-width: 600px;  /* Set max width */
+            height: 400px;  /* Set terminal height */
+            box-shadow: 0 0 20px #ff66cc;  /* Adjusted glow effect */
+            animation: glow 2.5s ease-in-out infinite alternate;  /* Slower glow effect */
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        @keyframes glow {
+            from {
+                box-shadow: 0 0 10px #ff66cc, 0 0 20px #ff66cc, 0 0 30px #ff66cc, 0 0 40px #ff66cc;
+            }
+            to {
+                box-shadow: 0 0 30px #ff66cc, 0 0 60px #ff66cc, 0 0 90px #ff66cc, 0 0 120px #ff66cc;
+            }
+        }
+
+        #output {
+            flex-grow: 1;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            padding: 10px;
+            border-top: none; /* Remove the dashed border at the top */
+            margin-top: 10px;
+        }
+
+        #output pre {
+            font-size: 10px; /* Smaller font size for ASCII art */
+            line-height: 1.1; /* Adjust line height */
+            margin: 0;
+            padding-top: 5px; /* Adjust upward position */
+        }
+
+        #input-container {
+            display: flex;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        #input {
+            flex-grow: 1;
+            background-color: transparent;
+            border: none;
+            border-bottom: 2px solid #ff66cc;
+            color: #ff66cc;
+            font-size: 14px;
+            outline: none;
+        }
+
+        #cursor {
+            color: #ff66cc;
+            animation: blink 0.5s step-end infinite;
+        }
+
+        @keyframes blink {
+            50% { opacity: 0; }
+        }
+
+        /* Thought Bubble Styles */
+        #thought-bubble {
+            position: absolute;
+            right: -10px;  /* Adjust this value to position it next to the character */
+            bottom: 10px;  /* Optional: Adjust if needed for vertical positioning */
+            width: 200px;
+            height: auto;
+            background-color: #fff;
+            color: #000;
+            border-radius: 30px 30px 0 30px;  /* Rounded corners for cloud-like shape */
+            padding: 10px;
+            font-size: 12px;
+            text-align: center;
+            box-shadow: 0 0 15px rgba(0,0,0,0.3);
+            display: none;
+        }
+
+    </style>
+</head>
+<body>
+    <!-- Character Section -->
+    <div id="character-container">
+        <img id="character" src="/Users/arnavkashyap/Downloads/gf_ai.png" alt="Anime Character">
+        <div id="thought-bubble">Lemme think bbg👅</div>
+    </div>
+
+    <!-- Terminal Section -->
+    <div id="terminal">
+        <div id="output">
+            <pre>
+
+    ______   ________         ______   ______ 
+    /      \ |        \       /      \ |      \
+    |  $$$$$$\| $$$$$$$$      |  $$$$$$\ \$$$$$$
+    | $$ __\$$| $$__          | $$__| $$  | $$  
+    | $$|    \| $$  \         | $$    $$  | $$  
+    | $$ \$$$$| $$$$$         | $$$$$$$$  | $$  
+    | $$__| $$| $$            | $$  | $$ _| $$_ 
+     \$$    $$| $$            | $$  | $$|   $$ \
+      \$$$$$$  \$$              \$$   \$$ \$$$$$$
+                                                                
+            </pre>
+             
+        </div>
+        <div id="input-container">
+            <input id="input" type="text" placeholder="Type here..." autofocus>
+        </div>
+    </div>
+
+    <script>
+        const input = document.getElementById("input");
+        const output = document.getElementById("output");
+        const character = document.getElementById("character");
+        const thoughtBubble = document.getElementById("thought-bubble");
+
+        // OpenAI API Key
+        const OPENAI_API_KEY = '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';
+
+        // Function to get AI response from OpenAI API
+        async function getOpenAIResponse(prompt) {
+            try {
+                const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${OPENAI_API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        model: 'gpt-3.5-turbo',
+                        messages: [{ role: 'user', content: prompt }]
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                return data.choices[0].message.content.trim();
+            } catch (error) {
+                console.error('Error fetching AI response:', error);
+                return 'Sorry, something went wrong. Please try again later.';
+            }
+        }
+
+        // Handle user input and display bot responses
+        input.addEventListener("keypress", async function (e) {
+            if (e.key === "Enter") {
+                e.preventDefault();
+
+                // Get user input
+                const userMessage = input.value.trim();
+                if (userMessage === "") return;
+
+                // Display user input in the terminal
+                output.innerHTML += `\n> ${userMessage}`;
+                input.value = "";
+
+                // Simulate bot typing animation
+                const botTyping = document.createElement("div");
+                botTyping.innerText = "Bot is typing...";
+                output.appendChild(botTyping);
+                output.scrollTop = output.scrollHeight;
+
+                // Show thought bubble when bot is typing
+                thoughtBubble.style.display = 'block';
+
+                // Fake delay for typing effect
+                await new Promise(resolve => setTimeout(resolve, 1500));
+
+                // Get AI response from OpenAI API
+                const botReply = await getOpenAIResponse(userMessage);
+
+                output.removeChild(botTyping);
+
+                // Replace with bot response
+                const botResponse = document.createElement("div");
+                output.appendChild(botResponse);
+                botResponse.style.opacity = 0;  // Start invisible
+                botResponse.innerText = botReply;
+              
+
+
+                const customPrompt = `You are a helpful assistant responding to a girly user. Respond in a brainrotted, casual slang tone with emojis and phrases like 'heyyyyyy', 'ohio', 'skibidi', 'rizzler', etc. Here's the user message: "${userMessage}"`;
+                console.log(customPrompt);
+                // Smoothly fade in bot response
+                await new Promise(resolve => {
+                    botResponse.style.transition = "opacity 0.5s ease-in";
+                    botResponse.style.opacity = 1;
+                    setTimeout(resolve, 500);
+                });
+
+                thoughtBubble.style.display = 'none';  // Hide thought bubble after response
+
+                output.scrollTop = output.scrollHeight; // Scroll to bottom
+            }
+        });
+
+        // Hide thought bubble when mouse leaves
+        character.addEventListener('mouseleave', () => {
+            thoughtBubble.style.display = 'none';
+        });
+    </script>
+</body>
+</html>
